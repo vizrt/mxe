@@ -1,0 +1,189 @@
+#! /bin/sh
+
+set -e
+_pasta_rules=$(dirname $0)
+_self=$0
+
+_uname_sm=$(uname -s -m)
+_platform=unknown
+_cpu=unknown
+_dynamic_library_path=LD_LIBRARY_PATH
+
+case "$_uname_sm" in
+*\ i686 | *\ i386 )
+    _cpu=x86
+    ;;
+*\ amd64 | *\ x86_64 )
+    _cpu=x86_64
+    ;;
+esac
+
+
+case "$_uname_sm" in
+CYGWIN* )
+    nocygwinpath=$(echo $PATH | sed -e 's-:/usr/bin:-:-g' -e 's-:/bin:-:-g')
+
+    # If the shell has detected the terminal column count, pass that along to the
+    # Pasta tool, so that it can format user messages appropriately.
+
+    if [ -n "$COLUMNS" ]; then
+        export COLUMNS
+    fi
+
+    # Use exec to allow safe runtime updating of this script
+
+    PATH=$nocygwinpath exec $(cygpath --unix ${COMSPEC}) /c \
+        $(cygpath --windows ${_pasta_rules})\\do $@
+    ;;
+Linux\ * )
+    _platform=linux
+    ;;
+Darwin\ * )
+    _platform=macosx
+
+    # Override cpu detection since we only have 32-bit builds of Pasta on Mac
+    _cpu=x86
+
+    _dynamic_library_path=DYLD_LIBRARY_PATH
+    ;;
+*)
+    echo NOMATCH
+    ;;
+esac
+
+_pasta_workspace=${_pasta_rules}/.pasta
+if [ ! -d $_pasta_workspace ]; then
+    mkdir $_pasta_workspace
+    echo Initialized Pasta Workspace
+fi
+
+# Test if Mono is available in the path, and if so, if it is recent enough
+# to be used for running Pasta.
+
+set +e
+ver=$(mono --version 2>/dev/null | (read line; echo "${line#*version }"))
+set -e
+if [ -n "$ver" ]; then
+    major=${ver%%.*}
+    ver=${ver#*.}
+    minor=${ver%%.*}
+
+    if [ "$major" -gt 2 -o "$major" -eq 2 -a "$minor" -ge 10 ]; then
+        if mono /dev/null 2>&1 | grep -q "mscorlib.dll was not found"; then
+            :
+        else
+            _mono=$(command -v mono)
+            _monoroot=$(dirname $(dirname "$_mono"))
+            if [ "$_platform" != "linux" -o -d "$_monoroot/lib/mono/gac/WindowsBase" ]; then
+                # Good, we have Mono 2.10 or newer with correct runtime support. Let's use it.
+                MONO="$_mono"
+            fi
+        fi
+    fi
+fi
+
+
+if [ -z "$MONO" ]; then
+    #
+    # Download a platform specific build of Pasta since a usable Mono
+    # installation is not available.
+    #
+    _pastatool_dir_name=Pasta_${_platform}_${_cpu}
+    _pastatool_dir=$_pasta_workspace/$_pastatool_dir_name
+    _pastatool_bindir=$_pastatool_dir/bin
+    _pastatool_libdir=$_pastatool_dir/lib
+else
+    #
+    # Download the platform independent build of Pasta, since a usable Mono
+    # installation is available.
+    #
+    _pastatool_dir_name=BuildTools
+    _pastatool_dir=$_pasta_workspace/$_pastatool_dir_name
+    _pastatool_bindir=$_pastatool_dir/bin/Release
+    _pastatool_libdir=
+fi
+
+_bootstrap=no
+if [ ! -d $_pastatool_bindir ]; then
+    _bootstrap=yes
+fi
+
+if [ "$1" = "get" ]; then
+    _bootstrap=yes
+fi
+
+if [ "$1" = "bootstrap" ]; then
+    _bootstrap=yes
+fi
+
+
+bootstrap () {
+    _workspace=$1
+    _tooldirpath=$2
+    _tooldirname=$3
+
+    _fridge=$PASTA_FRIDGE
+    if [ "$_fridge" = "" ]; then
+        _fridge=$COMPONENT_STORAGE
+    fi
+    if [ "$_fridge" = "" ]; then
+        _fridge=http://component.vizrt.internal/
+    fi
+
+    _archive_name=${_tooldirname}-latest.zip
+    _archive=$_workspace/${_archive_name}
+    _stagetool_url=$_fridge/stagedbuilds/${_archive_name}
+    if curl --silent --show-error --fail --output $_archive $_stagetool_url 2>/dev/null; then
+        echo "Downloaded pasta tool from $_stagetool_url"
+    else
+        if wget --quiet -O $_archive $_stagetool_url; then
+            echo "Downloaded pasta tool from $_stagetool_url"
+        else
+            echo "$_self: Resource $_stagetool_url unavailable."
+            exit 1
+        fi
+    fi
+    if [ -d $_tooldirpath ]; then
+        rm -r  $_tooldirpath
+    fi
+    if command -v unzip > /dev/null; then
+        unzip -q $_archive -d $_tooldirpath
+    else
+        echo "The Pasta bootstrap script requires 'unzip' command to be available." >&2
+        if command apt-get > /dev/null; then
+            echo "Try running 'apt-get install unzip', then rerunning pasta."
+        fi
+        exit 1
+    fi
+
+
+    chmod a+x $_tooldirpath/bin/*
+}
+
+if [ $_bootstrap = yes ]; then
+    bootstrap $_pasta_workspace $_pastatool_dir $_pastatool_dir_name
+fi
+
+if [ -n "${_pastatool_libdir}" ]; then
+    # Update library search path for the current platform
+    eval _value=\$$_dynamic_library_path
+    if [ "${_value}" = "" ]; then
+        eval $_dynamic_library_path=${_pastatool_libdir}
+    else
+        eval $_dynamic_library_path=${_pastatool_libdir}:\$$_dynamic_library_path
+    fi
+    export ${_dynamic_library_path}
+fi
+
+if [ -z "$MONO" ]; then
+    #
+    # Run a natively compiled Pasta binary.
+    #
+    exec $_pastatool_bindir/pasta $@
+else
+    #
+    # Run the Pasta .Net assembly using Mono.
+    #
+    exec "$MONO" $_pastatool_bindir/Pasta.exe $@
+fi
+

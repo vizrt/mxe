@@ -1,0 +1,7 @@
+#!/bin/sh
+
+export TARGET='x86_64-w64-mingw32.shared'
+
+make MXE_TARGETS=${TARGET} ffmpeg
+
+./ffmpeg-2.8.4/bundle.sh
