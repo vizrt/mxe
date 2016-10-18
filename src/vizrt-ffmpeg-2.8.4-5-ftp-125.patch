@@ -1,0 +1,50 @@
+diff -r a20721214065 libavformat/ftp.c
+--- a/libavformat/ftp.c	Thu Mar 31 13:49:38 2016 +0200
++++ b/libavformat/ftp.c	Thu Mar 31 15:52:23 2016 +0200
+@@ -227,8 +227,15 @@
+ 
+ static void ftp_close_both_connections(FTPContext *s)
+ {
++    
++    char response[CONTROL_BUFFER_SIZE];
++    const int response_codes[] = {226, 0};
++    if ( s->conn_data != NULL && (s->state == DOWNLOADING || s->state == UPLOADING) ) {
++        char **bufferp = (char**)&response;
++        ftp_close_data_connection(s);
++        ftp_status(s, bufferp, response_codes);
++    }    
+     ffurl_closep(&s->conn_control);
+-    ftp_close_data_connection(s);
+ }
+ 
+ static int ftp_auth(FTPContext *s)
+@@ -401,10 +408,12 @@
+ static int ftp_retrieve(FTPContext *s)
+ {
+     char command[CONTROL_BUFFER_SIZE];
+-    static const int retr_codes[] = {150, 0};
++    static const int retr_codes[] = {150, 125, 0};
++    int resp_code;
+ 
+     snprintf(command, sizeof(command), "RETR %s\r\n", s->path);
+-    if (ftp_send_command(s, command, retr_codes, NULL) != 150)
++    resp_code = ftp_send_command(s, command, retr_codes, NULL);
++    if (resp_code != 125 && resp_code != 150)
+         return AVERROR(EIO);
+ 
+     s->state = DOWNLOADING;
+@@ -415,10 +424,12 @@
+ static int ftp_store(FTPContext *s)
+ {
+     char command[CONTROL_BUFFER_SIZE];
+-    static const int stor_codes[] = {150, 0};
++    static const int stor_codes[] = {150, 125, 0};
++    int resp_code;
+ 
+     snprintf(command, sizeof(command), "STOR %s\r\n", s->path);
+-    if (ftp_send_command(s, command, stor_codes, NULL) != 150)
++    resp_code = ftp_send_command(s, command, stor_codes, NULL);
++    if (resp_code != 125 && resp_code != 150)
+         return AVERROR(EIO);
+ 
+     s->state = UPLOADING;

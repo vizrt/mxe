@@ -1,0 +1,39 @@
+diff -r b4b522e0ee8e -r 915b2a9cd732 libavcodec/dv_profile.c
+--- a/libavcodec/dv_profile.c	Tue Sep 08 10:56:42 2015 +0200
++++ b/libavcodec/dv_profile.c	Tue Sep 08 11:07:08 2015 +0200
+@@ -165,7 +165,7 @@
+       .ltc_divisor        = 30,
+       .height             = 1080,
+       .width              = 1280,
+-      .sar                = { { 1, 1 }, { 3, 2 } },
++      .sar                = { { 3, 2 }, { 3, 2 } },
+       .pix_fmt            = AV_PIX_FMT_YUV422P,
+       .bpm                = 8,
+       .block_sizes        = block_sizes_dv100,
+@@ -182,7 +182,7 @@
+       .ltc_divisor        = 25,
+       .height             = 1080,
+       .width              = 1440,
+-      .sar                = { { 1, 1 }, { 4, 3 } },
++      .sar                = { { 4, 3 }, { 4, 3 } },
+       .pix_fmt            = AV_PIX_FMT_YUV422P,
+       .bpm                = 8,
+       .block_sizes        = block_sizes_dv100,
+@@ -199,7 +199,7 @@
+       .ltc_divisor        = 60,
+       .height             = 720,
+       .width              = 960,
+-      .sar                = { { 1, 1 }, { 4, 3 } },
++      .sar                = { { 4, 3 }, { 4, 3 } },
+       .pix_fmt            = AV_PIX_FMT_YUV422P,
+       .bpm                = 8,
+       .block_sizes        = block_sizes_dv100,
+@@ -216,7 +216,7 @@
+       .ltc_divisor        = 50,
+       .height             = 720,
+       .width              = 960,
+-      .sar                = { { 1, 1 }, { 4, 3 } },
++      .sar                = { { 4, 3 }, { 4, 3 } },
+       .pix_fmt            = AV_PIX_FMT_YUV422P,
+       .bpm                = 8,
+       .block_sizes        = block_sizes_dv100,

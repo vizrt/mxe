@@ -1,0 +1,309 @@
+=== modified file 'configure'
+--- a/configure	revid:are@vizrt.com-20160524123118-wt8ahnanaxp1y4z7
++++ b/configure	2016-05-25 12:13:09 +0000
+@@ -259,6 +259,7 @@
+   --enable-libwavpack      enable wavpack encoding via libwavpack [no]
+   --enable-libwebp         enable WebP encoding via libwebp [no]
+   --enable-libx264         enable H.264 encoding via x264 [no]
++  --enable-runtime-libx264 enable H.264 encoding via x264 loaded at runtime [no]
+   --enable-libx265         enable HEVC encoding via x265 [no]
+   --enable-libxavs         enable AVS encoding via xavs [no]
+   --enable-libxcb          enable X11 grabbing using XCB [autodetect]
+@@ -1457,6 +1458,7 @@
+     small
+     static
+     swscale_alpha
++    runtime_libx264
+ "
+ 
+ HWACCEL_LIST="
+@@ -2908,6 +2910,7 @@
+ enable faan faandct faanidct
+ enable optimizations
+ enable runtime_cpudetect
++disable runtime_libx264
+ enable safe_bitstream_reader
+ enable static
+ enable swscale_alpha
+@@ -5316,6 +5319,7 @@
+                                die "ERROR: libx264 must be installed and version must be >= 0.118."; } &&
+                              { check_cpp_condition x264.h "X264_MPEG2" &&
+                                enable libx262; }
++enabled runtime_libx264      && { { check_header "x264.h" && add_extralibs ${ldl} && enable libx264; } || die "ERROR: missing x264.h"; }
+ enabled libx265           && require_pkg_config x265 x265.h x265_api_get &&
+                              { check_cpp_condition x265.h "X265_BUILD >= 57" ||
+                                die "ERROR: libx265 version must be >= 57."; }
+@@ -5891,6 +5895,10 @@
+ fi
+ echo "big-endian                ${bigendian-no}"
+ echo "runtime cpu detection     ${runtime_cpudetect-no}"
++
++if enabled libx264; then
++    echo "runtime x264 loading      ${runtime_libx264-no}"
++fi
+ if enabled x86; then
+     echo "${yasmexe}                      ${yasm-no}"
+     echo "MMX enabled               ${mmx-no}"
+
+=== modified file 'libavcodec/libx264.c'
+--- a/libavcodec/libx264.c	revid:are@vizrt.com-20160524123118-wt8ahnanaxp1y4z7
++++ b/libavcodec/libx264.c	2016-05-25 15:02:04 +0000
+@@ -33,6 +33,222 @@
+ #endif
+ 
+ #include <x264.h>
++
++typedef x264_t* (*PFNX264ENCODEROPEN)( x264_param_t * );
++typedef int (*PFNX264ENCODERRECONFIG)( x264_t *, x264_param_t * );
++typedef void (*PFNX264ENCODERPARAMETERS)( x264_t *, x264_param_t * );
++typedef int (*PFNX264ENCODERHEADERS)( x264_t *, x264_nal_t **, int * );
++typedef int (*PFNX264ENCODERENCODE)( x264_t *, x264_nal_t **, int *, x264_picture_t *, x264_picture_t * );
++typedef void (*PFNX264ENCODERCLOSE)( x264_t * );
++typedef int (*PFNX264ENCODERDELAYEDFRAMES)( x264_t * );
++typedef int (*PFNX264ENCODERMAXIMUMDELAYEDFRAMES)( x264_t * );
++typedef void (*PFNX264ENCODERINTRAREFRESH)( x264_t * );
++typedef int (*PFNX264ENCODERINVALIDATEREFERENCE)( x264_t *, int64_t pts );
++
++typedef void (*PFNX264PARAMDEFAULT)( x264_param_t * );
++typedef int (*PFNX264PARAMPARSE)( x264_param_t *, const char *name, const char *value );
++typedef int (*PFNX264PARAMDEFAULTPRESET)( x264_param_t *, const char *preset, const char *tune );
++typedef void (*PFNX264PARAMAPPLYFASTFIRSTPASS)( x264_param_t * );
++typedef int (*PFNX264PARAMAPPLYPROFILE)( x264_param_t *, const char *profile );
++
++typedef void (*PFNX264PICTUREINIT)( x264_picture_t *pic );
++
++typedef const x264_level_t (*PFNX264LEVELS)[];
++typedef const int *PFNX264BITDEPTH;
++typedef const int *PFNX264CHROMAFORMAT;
++
++static struct
++{
++    int library_loaded;
++
++    PFNX264ENCODEROPEN x264_encoder_open;
++    PFNX264ENCODERRECONFIG x264_encoder_reconfig;
++    PFNX264ENCODERPARAMETERS x264_encoder_parameters;
++    PFNX264ENCODERHEADERS x264_encoder_headers;
++    PFNX264ENCODERENCODE x264_encoder_encode;
++    PFNX264ENCODERCLOSE x264_encoder_close;
++    PFNX264ENCODERDELAYEDFRAMES x264_encoder_delayed_frames;
++    PFNX264ENCODERMAXIMUMDELAYEDFRAMES x264_encoder_maximum_delayed_frames;
++    PFNX264ENCODERINTRAREFRESH x264_encoder_intra_refresh;
++    PFNX264ENCODERINVALIDATEREFERENCE x264_encoder_invalidate_reference;
++
++    PFNX264PARAMDEFAULT x264_param_default;
++    PFNX264PARAMPARSE x264_param_parse;
++    PFNX264PARAMDEFAULTPRESET x264_param_default_preset;
++    PFNX264PARAMAPPLYFASTFIRSTPASS x264_param_apply_fastfirstpass;
++    PFNX264PARAMAPPLYPROFILE x264_param_apply_profile;
++
++    PFNX264PICTUREINIT x264_picture_init;
++
++    PFNX264LEVELS x264_levels;
++    PFNX264BITDEPTH x264_bit_depth;
++    PFNX264CHROMAFORMAT x264_chroma_format;
++} api;
++
++#if CONFIG_RUNTIME_LIBX264
++
++# define STR2(x) #x
++# define STR(x) STR2(x)
++
++# if defined(_WIN32)
++#  include <windows.h>
++#  define LIBRARY_NAME "libx264-" STR(X264_BUILD) ".dll"
++#  define LIBRARY_TYPE HMODULE
++#  define LOAD_LIB(x) LoadLibrary(TEXT(x))
++#  define LOAD_FUNC(l, s) GetProcAddress(l, s)
++# else
++#  include <dlfcn.h>
++#  if defined(__APPLE__)
++#   define LIBRARY_NAME "libx264." STR(X264_BUILD) ".dylib"
++#  else
++#   define LIBRARY_NAME "libx264.so." STR(X264_BUILD)
++#  endif
++#  define LIBRARY_TYPE void*
++#  define LOAD_LIB(x) dlopen(x, RTLD_LAZY)
++#  define LOAD_FUNC(l, s) dlsym(l, s)
++# endif
++
++static int load_api(void)
++{
++    LIBRARY_TYPE x264;
++
++    memset(&api, 0, sizeof(api));
++
++    x264 = LOAD_LIB(LIBRARY_NAME);
++
++    if (!x264)
++    {
++        return 1;
++    }
++
++
++    api.library_loaded = 1;
++    api.x264_encoder_open = LOAD_FUNC(x264, "x264_encoder_open_" STR(X264_BUILD));
++    api.x264_encoder_reconfig = LOAD_FUNC(x264, "x264_encoder_reconfig");
++    api.x264_encoder_parameters = LOAD_FUNC(x264, "x264_encoder_parameters");
++    api.x264_encoder_headers = LOAD_FUNC(x264, "x264_encoder_headers");
++    api.x264_encoder_encode = LOAD_FUNC(x264, "x264_encoder_encode");
++    api.x264_encoder_close = LOAD_FUNC(x264, "x264_encoder_close");
++    api.x264_encoder_delayed_frames = LOAD_FUNC(x264, "x264_encoder_delayed_frames");
++    api.x264_encoder_maximum_delayed_frames = LOAD_FUNC(x264, "x264_encoder_maximum_delayed_frames");
++    api.x264_encoder_intra_refresh = LOAD_FUNC(x264, "x264_encoder_intra_refresh");
++    api.x264_encoder_invalidate_reference = LOAD_FUNC(x264, "x264_encoder_invalidate_reference");
++
++    api.x264_param_default = LOAD_FUNC(x264, "x264_param_default");
++    api.x264_param_parse = LOAD_FUNC(x264, "x264_param_parse");
++    api.x264_param_default_preset = LOAD_FUNC(x264, "x264_param_default_preset");
++    api.x264_param_apply_fastfirstpass = LOAD_FUNC(x264, "x264_param_apply_fastfirstpass");
++    api.x264_param_apply_profile = LOAD_FUNC(x264, "x264_param_apply_profile");
++
++    api.x264_picture_init = LOAD_FUNC(x264, "x264_picture_init");
++
++    api.x264_levels = LOAD_FUNC(x264, "x264_levels");
++    api.x264_bit_depth = LOAD_FUNC(x264, "x264_bit_depth");
++    api.x264_chroma_format = LOAD_FUNC(x264, "x264_chroma_format");
++
++    return 0;
++}
++#else
++
++#define LIBRARY_NAME
++
++static int load_api(void)
++{
++    api.library_loaded = 1;
++    api.x264_encoder_open = x264_encoder_open;
++    api.x264_encoder_reconfig = x264_encoder_reconfig;
++    api.x264_encoder_parameters = x264_encoder_parameters;
++    api.x264_encoder_headers = x264_encoder_headers;
++    api.x264_encoder_encode = x264_encoder_encode;
++    api.x264_encoder_close = x264_encoder_close;
++    api.x264_encoder_delayed_frames = x264_encoder_delayed_frames;
++    api.x264_encoder_maximum_delayed_frames = x264_encoder_maximum_delayed_frames;
++    api.x264_encoder_intra_refresh = x264_encoder_intra_refresh;
++    api.x264_encoder_invalidate_reference = x264_encoder_invalidate_reference;
++
++    api.x264_param_default = x264_param_default;
++    api.x264_param_parse = x264_param_parse;
++    api.x264_param_default_preset = x264_param_default_preset;
++    api.x264_param_apply_fastfirstpass = x264_param_apply_fastfirstpass;
++    api.x264_param_apply_profile = x264_param_apply_profile;
++
++    api.x264_picture_init = x264_picture_init;
++
++    api.x264_levels = &x264_levels;
++    api.x264_bit_depth = &x264_bit_depth;
++    api.x264_chroma_format = &x264_chroma_format;
++
++    return 0;
++}
++#endif
++
++static int validate_api(AVCodecContext *s)
++{
++    if (!api.library_loaded)
++    {
++        av_log(s, AV_LOG_ERROR, "Failed to load shared library: " LIBRARY_NAME "\n");
++        return 1;
++    }
++#define VALIDATE_SYMBOL_RESOLVED(name) \
++    if (!api.name) { \
++        av_log(s, AV_LOG_ERROR, "Failed to load dynamic symbol: " #name "\n"); \
++        return 1; \
++    }
++#define VALIDATE_SYMBOL(name) VALIDATE_SYMBOL_RESOLVED(name)
++
++    VALIDATE_SYMBOL(x264_encoder_open);
++    VALIDATE_SYMBOL(x264_encoder_reconfig);
++    VALIDATE_SYMBOL(x264_encoder_parameters);
++    VALIDATE_SYMBOL(x264_encoder_headers);
++    VALIDATE_SYMBOL(x264_encoder_encode);
++    VALIDATE_SYMBOL(x264_encoder_close);
++    VALIDATE_SYMBOL(x264_encoder_delayed_frames);
++    VALIDATE_SYMBOL(x264_encoder_maximum_delayed_frames);
++    VALIDATE_SYMBOL(x264_encoder_intra_refresh);
++    VALIDATE_SYMBOL(x264_encoder_invalidate_reference);
++
++    VALIDATE_SYMBOL(x264_param_default);
++    VALIDATE_SYMBOL(x264_param_parse);
++    VALIDATE_SYMBOL(x264_param_default_preset);
++    VALIDATE_SYMBOL(x264_param_apply_fastfirstpass);
++    VALIDATE_SYMBOL(x264_param_apply_profile);
++
++    VALIDATE_SYMBOL(x264_picture_init);
++
++    VALIDATE_SYMBOL(x264_levels);
++    VALIDATE_SYMBOL(x264_bit_depth);
++    VALIDATE_SYMBOL(x264_chroma_format);
++
++#undef VALIDATE_SYMBOL
++#undef VALIDATE_SYMBOL_RESOLVED
++
++    return 0;
++}
++
++#undef x264_encoder_open
++#define x264_encoder_open api.x264_encoder_glue2(x264_encoder_open_,X264_BUILD)
++#define x264_encoder_reconfig api.x264_encoder_reconfig
++#define x264_encoder_parameters api.x264_encoder_parameters
++#define x264_encoder_headers api.x264_encoder_headers
++#define x264_encoder_encode api.x264_encoder_encode
++#define x264_encoder_close api.x264_encoder_close
++#define x264_encoder_delayed_frames api.x264_encoder_delayed_frames
++#define x264_encoder_maximum_delayed_frames api.x264_encoder_maximum_delayed_frames
++#define x264_encoder_intra_refresh api.x264_encoder_intra_refresh
++#define x264_encoder_invalidate_reference api.x264_encoder_invalidate_reference
++
++#define x264_param_default api.x264_param_default
++#define x264_param_parse api.x264_param_parse
++#define x264_param_default_preset api.x264_param_default_preset
++#define x264_param_apply_fastfirstpass api.x264_param_apply_fastfirstpass
++#define x264_param_apply_profile api.x264_param_apply_profile
++
++#define x264_picture_init api.x264_picture_init
++
++#define x264_levels (*api.x264_levels)
++#define x264_bit_depth (*api.x264_bit_depth)
++#define x264_chroma_format (*api.x264_chroma_format)
++
+ #include <float.h>
+ #include <math.h>
+ #include <stdio.h>
+@@ -401,6 +617,12 @@
+     X264Context *x4 = avctx->priv_data;
+     int sw,sh;
+ 
++    if (validate_api(avctx) != 0)
++    {
++        av_log(avctx, AV_LOG_ERROR, "Failed to init x264 encoder. Missing function pointers\n");
++        return AVERROR(EINVAL);
++    }
++
+     if (avctx->global_quality > 0)
+         av_log(avctx, AV_LOG_WARNING, "-qscale is ignored, -crf is recommended.\n");
+ 
+@@ -803,12 +1025,15 @@
+ 
+ static av_cold void X264_init_static(AVCodec *codec)
+ {
+-    if (x264_bit_depth == 8)
+-        codec->pix_fmts = pix_fmts_8bit;
+-    else if (x264_bit_depth == 9)
+-        codec->pix_fmts = pix_fmts_9bit;
+-    else if (x264_bit_depth == 10)
+-        codec->pix_fmts = pix_fmts_10bit;
++    if (load_api() == 0)
++    {
++        if (x264_bit_depth == 8)
++            codec->pix_fmts = pix_fmts_8bit;
++        else if (x264_bit_depth == 9)
++            codec->pix_fmts = pix_fmts_9bit;
++        else if (x264_bit_depth == 10)
++            codec->pix_fmts = pix_fmts_10bit;
++    }
+ }
+ 
+ #define OFFSET(x) offsetof(X264Context, x)
+
