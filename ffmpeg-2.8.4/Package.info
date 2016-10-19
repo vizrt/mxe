@@ -1,5 +1,5 @@
 Package: ffmpeg
-Summary:: FFMpeg for Windoes
+Summary:: FFMpeg for Windows
 Version: 2.8.4
 ConformanceLevel: 3
 IncludeFiles: packaging/bin
