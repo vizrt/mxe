@@ -2,7 +2,6 @@
 
 export TARGET='x86_64-w64-mingw32.shared'
 
-make MXE_TARGETS=${TARGET} ffmpeg xerces
+make MXE_TARGETS=${TARGET} vizrt-ffmpeg-2.8.4
 
 ./ffmpeg-2.8.4/bundle.sh
-./xerces-2.8.0/bundle.sh
