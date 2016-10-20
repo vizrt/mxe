@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+def configure(ctx):
+    libraries = [
+        "avcodec",
+        "avdevice",
+        "avfilter",
+        "avformat",
+        "avresample",
+        "avutil",
+        "postproc",
+        "swresample",
+        "swscale"
+    ]
+    ctx.check(
+        lib=libraries,
+        libpath=ctx.path.find_node("lib").abspath(),
+        header_name="libavformat/avformat.h",
+        includes=[
+            ctx.path.find_node("include").abspath(),
+            ctx.path.find_node("extra/includes").abspath()
+        ]
+    )
+
