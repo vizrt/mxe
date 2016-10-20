@@ -18,6 +18,7 @@ mkdir ${DST}/bin
 mkdir ${DST}/lib
 mkdir ${DST}/include
 
+cp ffmpeg-2.8.4/wscript.package ${DST}/wscript
 cp usr/${TARGET}/bin/*.lib ${DST}/lib/
 cp usr/${TARGET}/bin/*.dll ${DST}/bin/
 cp -r usr/${TARGET}/include/libavformat ${DST}/include/
