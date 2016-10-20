@@ -5,6 +5,7 @@ ConformanceLevel: 3
 IncludeFiles: packaging/bin
 IncludeFiles: packaging/include
 IncludeFiles: packaging/lib
+IncludeFiles: extra
 IncludeFiles: wscript
 Keywords: ffmpeg, encoding, decoding, media, audio, video
 Publishable: yes
