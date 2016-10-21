@@ -18,6 +18,7 @@ def configure(ctx):
         includes=[
             ctx.path.find_node("include").abspath(),
             ctx.path.find_node("extra/includes").abspath()
-        ]
+        ],
+        uselib_store="FFMPEG"
     )
 
