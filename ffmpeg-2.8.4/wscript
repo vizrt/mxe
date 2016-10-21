@@ -8,7 +8,6 @@ def configure(ctx):
         "avformat",
         "avresample",
         "avutil",
-        "postproc",
         "swresample",
         "swscale"
     ]
