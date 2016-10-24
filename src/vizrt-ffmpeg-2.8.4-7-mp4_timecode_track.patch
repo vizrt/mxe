@@ -1,0 +1,34 @@
+=== modified file 'libavformat/movenc.c'
+--- a/libavformat/movenc.c	revid:mjo@vizrt.com-20151217072514-5rdfc3x9h1qamw22
++++ b/libavformat/movenc.c	2016-01-20 04:56:52 +0000
+@@ -1824,7 +1824,7 @@
+     if (track->st)
+         t = av_dict_get(track->st->metadata, "reel_name", NULL, 0);
+ 
+-    if (t && utf8len(t->value))
++    if (t && utf8len(t->value) && track->mode != MODE_MP4)
+         mov_write_source_reference_tag(pb, track, t->value);
+     else
+         avio_wb16(pb, 0); /* zero size */
+@@ -2201,7 +2201,10 @@
+     } else if (track->tag == MKTAG('r','t','p',' ')) {
+         mov_write_hmhd_tag(pb);
+     } else if (track->tag == MKTAG('t','m','c','d')) {
+-        mov_write_gmhd_tag(pb, track);
++        if (track->mode == MODE_MP4)
++            mov_write_nmhd_tag(pb);
++        else
++            mov_write_gmhd_tag(pb, track);
+     }
+     if (track->mode == MODE_MOV) /* FIXME: Why do it for MODE_MOV only ? */
+         mov_write_hdlr_tag(pb, NULL);
+@@ -5052,7 +5055,7 @@
+         }
+     }
+ 
+-    if (mov->mode == MODE_MOV) {
++    if (mov->mode == MODE_MOV || mov->mode == MODE_MP4) {
+         tmcd_track = mov->nb_streams;
+ 
+         /* +1 tmcd track for each video stream with a timecode */
+
