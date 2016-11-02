@@ -22,3 +22,12 @@ def configure(ctx):
         uselib_store="FFMPEG"
     )
 
+
+def build(ctx):
+    for lib in ctx.path.find_node("bin").ant_glob("*.dll"):
+        ctx(features="subst",
+            is_copy=True,
+            target=str(lib),
+            source=lib,
+            path=ctx.root.find_node(ctx.out_dir).make_node("bin")
+        )
