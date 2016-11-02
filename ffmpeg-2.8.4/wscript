@@ -29,5 +29,6 @@ def build(ctx):
             is_copy=True,
             target=str(lib),
             source=lib,
-            path=ctx.root.find_node(ctx.out_dir).make_node("bin")
+            path=ctx.root.find_node(ctx.out_dir).make_node("bin"),
+            install_path="${BINDIR}"
         )
