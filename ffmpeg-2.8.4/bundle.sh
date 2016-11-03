@@ -27,3 +27,5 @@ cp -r usr/${TARGET}/include/libavfilter ${DST}/include/
 cp -r usr/${TARGET}/include/libswresample ${DST}/include/
 cp -r usr/${TARGET}/include/libavutil ${DST}/include/
 cp -r usr/${TARGET}/include/libswscale ${DST}/include/
+cp -r usr/${TARGET}/include/SDL ${DST}/include/
+cp -r usr/${TARGET}/include/x264*.h ${DST}/include/
