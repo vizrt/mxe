@@ -17,9 +17,12 @@ define $(PKG)_UPDATE
     tail -1
 endef
 
+
 define $(PKG)_BUILD
     $(SED) -i 's,-mwindows,-lwinmm -mwindows,' '$(1)/configure'
-    cd '$(1)' && ./configure \
+    cd '$(1)' && \
+        LDFLAGS=-Wl,--output-def,SDL.def \
+        ./configure \
         $(MXE_CONFIGURE_OPTS) \
         --enable-threads \
         --enable-directx \
@@ -40,4 +43,6 @@ define $(PKG)_BUILD
         -DPKG_VERSION=$($(PKG)_VERSION) \
         '$(PWD)/src/cmake/test'
     $(MAKE) -C '$(1).test-cmake' -j 1 install
+
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/SDL.lib -d $(1)/SDL.def
 endef

@@ -18,7 +18,9 @@ endef
 
 define $(PKG)_BUILD
     $(SED) -i 's,yasm,$(TARGET)-yasm,g' '$(1)/configure'
-    cd '$(1)' && ./configure \
+    cd '$(1)' && \
+        ./configure \
+        --extra-ldflags="-Wl,--output-def,x264.def" \
         $(MXE_CONFIGURE_OPTS) \
         --cross-prefix='$(TARGET)'- \
         --enable-win32thread \
@@ -27,4 +29,6 @@ define $(PKG)_BUILD
     $(MAKE) -C '$(1)' -j 1 uninstall
     $(MAKE) -C '$(1)' -j '$(JOBS)'
     $(MAKE) -C '$(1)' -j 1 install
+
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/x264.lib -d $(1)/x264.def
 endef
