@@ -22,6 +22,47 @@ def configure(ctx):
         uselib_store="FFMPEG"
     )
 
+    SDL_FRAGMENT = """
+        #include <SDL.h>
+        #undef main
+
+        int main(int argc, char* argv[])
+        {
+            return 0;
+        }
+    """
+
+    ctx.check(
+        fragment=SDL_FRAGMENT,
+        lib="SDL",
+        libpath=ctx.path.find_node("lib").abspath(),
+        header_name="SDL.h",
+        includes=[ ctx.path.find_node("include/SDL").abspath() ],
+        uselib_store="SDL"
+    )
+
+    X264_FRAGMENT = """
+        #include <inttypes.h>
+        #include <x264.h>
+
+        int main(int argc, char* argv[])
+        {
+            return 0;
+        }
+    """
+
+    ctx.check(
+        fragment=X264_FRAGMENT,
+        lib="x264",
+        libpath=ctx.path.find_node("lib").abspath(),
+        header_name="x264.h",
+        includes=[
+            ctx.path.find_node("include").abspath(),
+            ctx.path.find_node("extra/includes").abspath()
+        ],
+        uselib_store="X264"
+    )
+
 
 def build(ctx):
     for lib in ctx.path.find_node("bin").ant_glob("*.dll"):
