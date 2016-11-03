@@ -47,5 +47,5 @@ define $(PKG)_BUILD
         '$(PWD)/src/cmake/test'
     $(MAKE) -C '$(1).test-cmake' -j 1 install
 
-    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/SDL.lib -d $(1)/SDL.def
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/SDL.lib -d $(1)/SDL.def -D SDL.dll
 endef
