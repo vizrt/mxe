@@ -31,6 +31,9 @@ define $(PKG)_BUILD
     $(MAKE) -C '$(1)' -j 1 install-bin install-hdrs install-lib install-data
     ln -sf '$(PREFIX)/$(TARGET)/bin/sdl-config' '$(PREFIX)/bin/$(TARGET)-sdl-config'
 
+    cp $(1)/include/SDL_config_* $(PREFIX)/$(TARGET)/include/SDL/.
+    cp $(1)/include/SDL_config.h.default $(PREFIX)/$(TARGET)/include/SDL/SDL_config.h
+
     '$(TARGET)-gcc' \
         -W -Wall -Werror -ansi -pedantic \
         '$(PWD)/src/$(PKG)-test.c' -o '$(PREFIX)/$(TARGET)/bin/test-sdl.exe' \
