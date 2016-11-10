@@ -31,5 +31,6 @@ define $(PKG)_BUILD
     $(MAKE) -C '$(1)' -j '$(JOBS)'
     $(MAKE) -C '$(1)' -j 1 install
 
-    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/x264.lib -d $(1)/x264.def -D libx264-148.dll
+    cat $(1)/x264.def | grep -v skip_prologue > $(1)/x264.fixed.def
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/x264.lib -d $(1)/x264.fixed.def -D libx264-142.dll
 endef
