@@ -1,0 +1,215 @@
+Index: a/common/common.h
+===================================================================
+--- a/common/common.h	(revision 1635)
++++ b/common/common.h	(working copy)
+@@ -913,6 +913,8 @@
+         double  f_psnr_mean_v[3];
+         double  f_ssim_mean_y[3];
+         double  f_frame_duration[3];
++		double  f_total_padding;
++
+         /* */
+         int64_t i_mb_count[3][19];
+         int64_t i_mb_partition[2][17];
+Index: a/encoder/encoder.c
+===================================================================
+--- a/encoder/encoder.c	(revision 1635)
++++ b/encoder/encoder.c	(working copy)
+@@ -600,7 +600,7 @@
+         }
+     }
+ 
+-    if( h->param.rc.i_rc_method < 0 || h->param.rc.i_rc_method > 2 )
++    if( h->param.rc.i_rc_method < 0 || h->param.rc.i_rc_method > 3 )
+     {
+         x264_log( h, X264_LOG_ERROR, "no ratecontrol method specified\n" );
+         return -1;
+@@ -787,6 +787,74 @@
+         h->param.rc.i_qp_min = X264_MAX( h->param.rc.i_qp_min, QP_BD_OFFSET + 1 );
+     }
+ 
++	if ( h->param.rc.i_rc_method == X264_RC_CBR_STRICT )
++	{
++		x264_log( h, X264_LOG_INFO, "X264_RC_CBR_STRICT selected\n" );
++
++		uint32_t fps_num = h->param.i_fps_num, fps_den = h->param.i_fps_den;
++		x264_reduce_fraction( &fps_num, &fps_den );
++		
++		// calculate target frame size
++		double frame_size = h->param.rc.i_bitrate;
++		double bitrate = h->param.rc.i_bitrate;
++		frame_size = (frame_size * fps_den) / fps_num;
++		
++		h->param.b_bluray_compat = 0;
++        h->param.b_vfr_input = 0;
++        h->param.b_aud = 0;
++        h->param.i_nal_hrd = X264_NAL_HRD_NONE;
++
++		h->param.rc.i_vbv_buffer_size = (int)frame_size;
++        h->param.rc.i_vbv_max_bitrate =
++        h->param.rc.i_bitrate = h->param.rc.i_vbv_buffer_size * fps_num / fps_den;
++        h->param.rc.f_vbv_buffer_init = 1.0;
++        h->param.rc.b_filler = 0;
++		
++		h->param.rc.i_vbv_buffer_size /= 125;
++		h->param.rc.i_bitrate /= 125;
++		h->param.rc.i_vbv_max_bitrate = bitrate / 125;
++	
++		h->param.rc.i_scbr_vbv_max_bitrate[0] = h->param.rc.i_vbv_max_bitrate;
++		h->param.rc.i_scbr_vbv_buffer_size[0] = h->param.rc.i_vbv_buffer_size;
++		h->param.rc.i_scbr_bitrate[0] = h->param.rc.i_bitrate;
++		
++		for (int i = 1; i < 6; i ++)
++		{
++			if (i <= 2)
++			{
++				h->param.rc.i_scbr_vbv_max_bitrate[i] = h->param.rc.i_scbr_vbv_max_bitrate[0]* h->param.rc.f_ip_factor;
++				h->param.rc.i_scbr_vbv_buffer_size[i] = h->param.rc.i_scbr_vbv_buffer_size[0] * h->param.rc.f_ip_factor;
++				h->param.rc.i_scbr_bitrate[i] = h->param.rc.i_scbr_bitrate[0]  * h->param.rc.f_ip_factor;
++			}
++			else if (i == 3)
++			{
++				h->param.rc.i_scbr_vbv_max_bitrate[i] = h->param.rc.i_scbr_vbv_max_bitrate[0];
++				h->param.rc.i_scbr_vbv_buffer_size[i] = h->param.rc.i_scbr_vbv_buffer_size[0];
++				h->param.rc.i_scbr_bitrate[i] = h->param.rc.i_scbr_bitrate[0];
++			}
++			else
++			{
++				h->param.rc.i_scbr_vbv_max_bitrate[i] = h->param.rc.i_scbr_vbv_max_bitrate[0] / h->param.rc.f_pb_factor;
++				h->param.rc.i_scbr_vbv_buffer_size[i] = h->param.rc.i_scbr_vbv_buffer_size[0] / h->param.rc.f_pb_factor;
++				h->param.rc.i_scbr_bitrate[i] = h->param.rc.i_scbr_bitrate[0] / h->param.rc.f_pb_factor;
++			}
++		}
++		
++		// adjust everything to maintain one frame vbv buffer size
++		int32_t fps = fps_num / fps_den;
++		
++		for (int i = 0; i < 6; i ++)
++		{
++			if( h->param.rc.i_scbr_vbv_buffer_size[i] < (int)(h->param.rc.i_scbr_vbv_max_bitrate[i] / fps) )   
++			{
++				h->param.rc.i_scbr_vbv_buffer_size[i] = h->param.rc.i_scbr_vbv_max_bitrate[i] / fps;
++			}
++		}
++		
++        h->param.rc.f_vbv_buffer_init = 1.0;
++        h->param.rc.b_filler = 1;
++	}
++
+     h->param.rc.f_rf_constant = x264_clip3f( h->param.rc.f_rf_constant, -QP_BD_OFFSET, 51 );
+     h->param.rc.f_rf_constant_max = x264_clip3f( h->param.rc.f_rf_constant_max, -QP_BD_OFFSET, 51 );
+     h->param.rc.i_qp_constant = x264_clip3( h->param.rc.i_qp_constant, 0, QP_MAX );
+@@ -3345,6 +3422,15 @@
+         h->sh.i_type = SLICE_TYPE_B;
+     }
+ 
++	if ( h->param.rc.i_rc_method == X264_RC_CBR_STRICT )
++	{
++		h->param.rc.i_vbv_buffer_size = h->param.rc.i_scbr_vbv_buffer_size[h->fenc->i_type];
++		h->param.rc.i_vbv_max_bitrate = h->param.rc.i_scbr_vbv_max_bitrate[h->fenc->i_type];
++		h->param.rc.i_bitrate = h->param.rc.i_scbr_bitrate[h->fenc->i_type];
++
++		x264_ratecontrol_init_reconfigurable( h, 1);
++	}
++
+     h->fdec->i_type = h->fenc->i_type;
+     h->fdec->i_frame = h->fenc->i_frame;
+     h->fenc->b_kept_as_ref =
+@@ -3738,6 +3824,48 @@
+     pic_out->hrd_timing = h->fenc->hrd_timing;
+     pic_out->prop.f_crf_avg = h->fdec->f_crf_avg;
+ 
++	if ( h->param.rc.i_rc_method == X264_RC_CBR_STRICT )
++	{
++		int frame_type = 0;
++#define MAP_SLICE_2_FRAME_TYPE(slice_type)\
++		{\
++			if (slice_type == 0) frame_type = 3; \
++			else if (slice_type == 1) frame_type = 4; \
++			else \
++			 frame_type = 2;\
++		}\
++		
++		MAP_SLICE_2_FRAME_TYPE(h->sh.i_type);
++		
++		h->param.rc.i_vbv_buffer_size = h->param.rc.i_scbr_vbv_buffer_size[frame_type];
++		h->param.rc.i_vbv_max_bitrate = h->param.rc.i_scbr_vbv_max_bitrate[frame_type];
++		h->param.rc.i_bitrate = h->param.rc.i_scbr_bitrate[frame_type];
++		
++
++		x264_ratecontrol_init_reconfigurable( h, 1);
++
++#undef MAP_SLICE_2_FRAME_TYPE
++		
++		int target_final = h->param.rc.i_vbv_buffer_size * 1000 / 8;
++			
++		if (frame_size < target_final)
++		{
++			filler = target_final - frame_size;
++			
++#if 0
++			FILE * file = fopen ("cbr_strict_stats.txt", "ab")
++			
++			if (file != NULL)
++			{
++				fopen ("cbr_strict_stats.txt", "wb")
++				fclose(file);
++			}
++#endif
++	
++		    h->stat.f_total_padding += filler;
++		}
++	}
++
+     /* Filler in AVC-Intra mode is written as zero bytes to the last slice
+      * We don't know the size of the last slice until encapsulation so we add filler to the encapsulated NAL */
+     if( h->param.i_avcintra_class )
+@@ -4233,9 +4361,11 @@
+                       SUM3( h->stat.f_psnr_average ) / duration,
+                       x264_psnr( SUM3( h->stat.f_ssd_global ), duration * i_yuv_size ),
+                       f_bitrate );
++			x264_log( h, X264_LOG_INFO, "total padding : %d\n", (uint32_t)(h->stat.f_total_padding / i_count) * 8);
+         }
+         else
+             x264_log( h, X264_LOG_INFO, "kb/s:%.2f\n", f_bitrate );
++			x264_log( h, X264_LOG_INFO, "total padding : %d\n", (uint32_t)(h->stat.f_total_padding / i_count) * 8);
+     }
+ 
+     /* rc */
+Index: a/encoder/ratecontrol.c
+===================================================================
+--- a/encoder/ratecontrol.c	(revision 1635)
++++ b/encoder/ratecontrol.c	(working copy)
+@@ -2105,7 +2105,7 @@
+ 
+     rct->buffer_fill_final -= (uint64_t)bits * h->sps->vui.i_time_scale;
+ 
+-    if( rct->buffer_fill_final < 0 )
++    if( rct->buffer_fill_final < 0  && h->param.rc.i_rc_method != X264_RC_CBR_STRICT )
+     {
+         double underflow = (double)rct->buffer_fill_final / h->sps->vui.i_time_scale;
+         if( rcc->rate_factor_max_increment && rcc->qpm >= rcc->qp_novbv + rcc->rate_factor_max_increment )
+Index: a/x264.h
+===================================================================
+--- a/x264.h	(revision 1635)
++++ b/x264.h	(working copy)
+@@ -178,6 +178,7 @@
+ #define X264_RC_CQP                  0
+ #define X264_RC_CRF                  1
+ #define X264_RC_ABR                  2
++#define X264_RC_CBR_STRICT           3
+ #define X264_QP_AUTO                 0
+ #define X264_AQ_NONE                 0
+ #define X264_AQ_VARIANCE             1
+@@ -412,6 +413,11 @@
+         /* VBV filler: force CBR VBV and use filler bytes to ensure hard-CBR.
+          * Implied by NAL-HRD CBR. */
+         int         b_filler;
++	
++		/* Strict CBR (SCBR)*/
++		int         i_scbr_vbv_max_bitrate[6];
++		int         i_scbr_vbv_buffer_size[6];
++		int         i_scbr_bitrate[6];
+ 
+         int         i_aq_mode;      /* psy adaptive QP. (X264_AQ_*) */
+         float       f_aq_strength;
