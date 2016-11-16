@@ -1,0 +1,83 @@
+diff -r ed826c7b344b -r 56a5d7385719 common/common.c
+--- a/common/common.c	Wed Mar 25 14:09:35 2015 +0100
++++ b/common/common.c	Wed Mar 25 14:14:06 2015 +0100
+@@ -88,6 +88,7 @@
+     param->i_bframe_pyramid = X264_B_PYRAMID_NORMAL;
+     param->b_interlaced = 0;
+     param->b_constrained_intra = 0;
++    param->b_force_poc_type_0 = 0;
+ 
+     param->b_deblocking_filter = 1;
+     param->i_deblocking_filter_alphac0 = 0;
+@@ -808,6 +809,8 @@
+     }
+     OPT("constrained-intra")
+         p->b_constrained_intra = atobool(value);
++    OPT("force-poc-type-0")
++        p->b_force_poc_type_0 = atobool(value);
+     OPT("cqm")
+     {
+         if( strstr( value, "flat" ) )
+@@ -1357,6 +1360,7 @@
+         s += sprintf( s, " stitchable=%d", p->b_stitchable );
+ 
+     s += sprintf( s, " constrained_intra=%d", p->b_constrained_intra );
++    s += sprintf( s, " force_poc_type_0=%d", p->b_force_poc_type_0 );
+ 
+     s += sprintf( s, " bframes=%d", p->i_bframe );
+     if( p->i_bframe )
+diff -r ed826c7b344b -r 56a5d7385719 encoder/encoder.c
+--- a/encoder/encoder.c	Wed Mar 25 14:09:35 2015 +0100
++++ b/encoder/encoder.c	Wed Mar 25 14:14:06 2015 +0100
+@@ -1262,6 +1262,7 @@
+     BOOLIFY( b_bluray_compat );
+     BOOLIFY( b_stitchable );
+     BOOLIFY( b_full_recon );
++    BOOLIFY( b_force_poc_type_0 );
+     BOOLIFY( b_opencl );
+     BOOLIFY( analyse.b_transform_8x8 );
+     BOOLIFY( analyse.b_weighted_bipred );
+diff -r ed826c7b344b -r 56a5d7385719 encoder/set.c
+--- a/encoder/set.c	Wed Mar 25 14:09:35 2015 +0100
++++ b/encoder/set.c	Wed Mar 25 14:14:06 2015 +0100
+@@ -166,7 +166,8 @@
+     while( (1 << sps->i_log2_max_frame_num) <= max_frame_num )
+         sps->i_log2_max_frame_num++;
+ 
+-    sps->i_poc_type = param->i_bframe || param->b_interlaced ? 0 : 2;
++    sps->i_poc_type = param->i_bframe || param->b_interlaced ||
++                      param->b_force_poc_type_0 ? 0 : 2;
+     if( sps->i_poc_type == 0 )
+     {
+         int max_delta_poc = (param->i_bframe + 2) * (!!param->i_bframe_pyramid + 1) * 2;
+diff -r ed826c7b344b -r 56a5d7385719 x264.c
+--- a/x264.c	Wed Mar 25 14:09:35 2015 +0100
++++ b/x264.c	Wed Mar 25 14:14:06 2015 +0100
+@@ -692,6 +692,8 @@
+     H0( "      --tff                   Enable interlaced mode (top field first)\n" );
+     H0( "      --bff                   Enable interlaced mode (bottom field first)\n" );
+     H2( "      --constrained-intra     Enable constrained intra prediction.\n" );
++    H2( "      --force-poc-type-0      Force using POC type 0 even if it wouldn't\n"
++        "                              strictly be necessary\n" );
+     H0( "      --pulldown <string>     Use soft pulldown to change frame rate\n"
+         "                                  - none, 22, 32, 64, double, triple, euro (requires cfr input)\n" );
+     H2( "      --fake-interlaced       Flag stream as interlaced but encode progressive.\n"
+@@ -1000,6 +1002,7 @@
+     { "bff",               no_argument, NULL, OPT_INTERLACED },
+     { "no-interlaced",     no_argument, NULL, OPT_INTERLACED },
+     { "constrained-intra", no_argument, NULL, 0 },
++    { "force-poc-type-0",  no_argument, NULL, 0 },
+     { "cabac",             no_argument, NULL, 0 },
+     { "no-cabac",          no_argument, NULL, 0 },
+     { "qp",          required_argument, NULL, 'q' },
+diff -r ed826c7b344b -r 56a5d7385719 x264.h
+--- a/x264.h	Wed Mar 25 14:09:35 2015 +0100
++++ b/x264.h	Wed Mar 25 14:14:06 2015 +0100
+@@ -334,6 +334,7 @@
+ 
+     int         b_interlaced;
+     int         b_constrained_intra;
++    int         b_force_poc_type_0;
+ 
+     int         i_cqm_preset;
+     char        *psz_cqm_file;      /* filename (in UTF-8) of CQM file, JM format */
