@@ -1,0 +1,46 @@
+=== modified file 'libavcodec/ituh263enc.c'
+--- a/libavcodec/ituh263enc.c	revid:martin.almloef@vizrt.com-20140219192547-p2f0y0oqjzjufeb8
++++ b/libavcodec/ituh263enc.c	2014-03-03 09:22:02 +0000
+@@ -158,10 +158,7 @@
+ 
+         put_bits(&s->pb, 3, 7);
+         put_bits(&s->pb,3,ufep); /* Update Full Extended PTYPE */
+-        if (format == 8)
+-            put_bits(&s->pb,3,6); /* Custom Source Format */
+-        else
+-            put_bits(&s->pb, 3, format);
++        put_bits(&s->pb,3,6); /* Custom Source Format */
+ 
+         put_bits(&s->pb,1, s->custom_pcf);
+         put_bits(&s->pb,1, s->umvplus); /* Unrestricted Motion Vector */
+@@ -188,19 +185,18 @@
+         /* This should be here if PLUSPTYPE */
+         put_bits(&s->pb, 1, 0); /* Continuous Presence Multipoint mode: off */
+ 
+-        if (format == 8) {
+-            /* Custom Picture Format (CPFMT) */
+-            s->aspect_ratio_info= ff_h263_aspect_to_info(s->avctx->sample_aspect_ratio);
++        /* Custom Picture Format (CPFMT) */
++        s->aspect_ratio_info= ff_h263_aspect_to_info(s->avctx->sample_aspect_ratio);
+ 
+-            put_bits(&s->pb,4,s->aspect_ratio_info);
+-            put_bits(&s->pb,9,(s->width >> 2) - 1);
+-            put_bits(&s->pb,1,1); /* "1" to prevent start code emulation */
+-            put_bits(&s->pb,9,(s->height >> 2));
+-            if (s->aspect_ratio_info == FF_ASPECT_EXTENDED){
+-                put_bits(&s->pb, 8, s->avctx->sample_aspect_ratio.num);
+-                put_bits(&s->pb, 8, s->avctx->sample_aspect_ratio.den);
+-            }
++        put_bits(&s->pb,4,s->aspect_ratio_info);
++        put_bits(&s->pb,9,(s->width >> 2) - 1);
++        put_bits(&s->pb,1,1); /* "1" to prevent start code emulation */
++        put_bits(&s->pb,9,(s->height >> 2));
++        if (s->aspect_ratio_info == FF_ASPECT_EXTENDED){
++            put_bits(&s->pb, 8, s->avctx->sample_aspect_ratio.num);
++            put_bits(&s->pb, 8, s->avctx->sample_aspect_ratio.den);
+         }
++
+         if(s->custom_pcf){
+             if(ufep){
+                 put_bits(&s->pb, 1, best_clock_code);
+
