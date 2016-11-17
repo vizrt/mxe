@@ -26,6 +26,7 @@ define $(PKG)_BUILD
         --cross-prefix='$(TARGET)'- \
         --enable-win32thread \
         --disable-lavf \
+        --disable-cli \
         --disable-swscale   # Avoid circular dependency with ffmpeg. Remove if undesired.
     $(MAKE) -C '$(1)' -j 1 uninstall
     $(MAKE) -C '$(1)' -j '$(JOBS)'
