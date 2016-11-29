@@ -1,0 +1,25 @@
+--- a/libavformat/movenc.c	2016-11-29 23:48:42.204798612 +0100
++++ b/libavformat/movenc.c	2016-11-29 23:48:27.504846236 +0100
+@@ -4319,11 +4319,18 @@
+             pkt->dts = trk->cluster[trk->entry - 1].dts + 1;
+             pkt->pts = AV_NOPTS_VALUE;
+         }
+-        if (pkt->duration < 0) {
+-            av_log(s, AV_LOG_ERROR, "Application provided duration: %d is invalid\n", pkt->duration);
+-            return AVERROR(EINVAL);
+-        }
+     }
++
++    if ( pkt->duration < 0 || pkt->duration > INT_MAX ) {
++        av_log(s, AV_LOG_ERROR, "Application provided duration: %"PRId64" is invalid\n", pkt->duration);
++        return AVERROR(EINVAL);
++    }
++
++    if ( pkt->dts < INT_MIN || pkt->dts > INT_MAX ) {
++        av_log(s, AV_LOG_ERROR, "Application provided dts: %"PRId64" is invalid\n", pkt->dts);
++        return AVERROR(EINVAL);
++    }
++
+     if (mov->flags & FF_MOV_FLAG_FRAGMENT) {
+         int ret;
+         if (mov->moov_written || mov->flags & FF_MOV_FLAG_EMPTY_MOOV) {
