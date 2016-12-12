@@ -9,7 +9,7 @@ $(PKG)_FILE     := ffmpeg-2.8.4.tar.bz2
 $(PKG)_URL      := http://svn.vizrt.internal/svn/3rdpartyarchives/ffmpeg/ffmpeg-2.8.4.tar.bz2
 $(PKG)_DEPS     := gcc bzip2 gnutls lame libass libbluray libbs2b libcaca \
                    libvpx opencore-amr opus sdl speex theora vidstab \
-                   vo-amrwbenc vorbis vizrt-x264-20141218 xvidcore yasm zlib vizrt-fdk-aac-0.1.2
+                   vo-amrwbenc vorbis vizrt-x264-20141218 xvidcore yasm zlib fdk-aac
 
 define $(PKG)_UPDATE
     $(WGET) -q -O- 'http://ffmpeg.org/releases/' | \
