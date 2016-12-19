@@ -16,7 +16,9 @@ define $(PKG)_UPDATE
 endef
 
 define $(PKG)_BUILD
-    cd '$(1)' && aclocal -I acinclude && autoconf && ./configure \
+    cd '$(1)' && aclocal -I acinclude && autoconf && \
+        LDFLAGS=-Wl,--output-def,SDL2.def \
+        ./configure \
         $(MXE_CONFIGURE_OPTS) \
         --enable-threads \
         --enable-directx
@@ -32,4 +34,5 @@ define $(PKG)_BUILD
         '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-sdl2.exe' \
         `'$(TARGET)-pkg-config' sdl2 --cflags --libs`
 
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/lib/SDL2.lib -d $(1)/SDL2.def -D SDL2.dll
 endef
