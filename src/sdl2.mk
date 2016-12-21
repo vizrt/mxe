@@ -29,6 +29,9 @@ define $(PKG)_BUILD
     $(MAKE) -C '$(1)' -j 1 install
     ln -sf '$(PREFIX)/$(TARGET)/bin/sdl2-config' '$(PREFIX)/bin/$(TARGET)-sdl2-config'
 
+    cp $(1)/include/SDL_config_* $(PREFIX)/$(TARGET)/include/SDL2/.
+    cp $(1)/include/SDL_config_windows.h $(PREFIX)/$(TARGET)/include/SDL2/SDL_config.h
+
     '$(TARGET)-gcc' \
         -W -Wall -Werror -ansi -pedantic \
         '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-sdl2.exe' \
