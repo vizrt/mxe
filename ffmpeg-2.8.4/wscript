@@ -19,7 +19,7 @@ def configure(ctx):
             ctx.path.find_node("include").abspath(),
             ctx.path.find_node("extra/includes").abspath()
         ],
-        uselib_store="FFMPEG"
+        uselib_store="ffmpeg"
     )
 
     SDL_FRAGMENT = """
@@ -38,7 +38,7 @@ def configure(ctx):
         libpath=ctx.path.find_node("lib").abspath(),
         header_name="SDL.h",
         includes=[ ctx.path.find_node("include/SDL").abspath() ],
-        uselib_store="SDL"
+        uselib_store="sdl"
     )
 
     X264_FRAGMENT = """
@@ -60,7 +60,7 @@ def configure(ctx):
             ctx.path.find_node("include").abspath(),
             ctx.path.find_node("extra/includes").abspath()
         ],
-        uselib_store="X264"
+        uselib_store="x264"
     )
 
 
