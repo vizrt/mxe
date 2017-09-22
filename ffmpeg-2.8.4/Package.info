@@ -7,6 +7,7 @@ IncludeFiles: packaging/include
 IncludeFiles: packaging/lib
 IncludeFiles: extra
 IncludeFiles: wscript
+IncludeFiles: winconfig; dst=lib/winconfig
 Keywords: ffmpeg, sdl, x264, encoding, decoding, media, audio, video
 Publishable: yes
 
