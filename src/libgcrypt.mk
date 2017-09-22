@@ -1,17 +1,18 @@
 # This file is part of MXE. See LICENSE.md for licensing information.
 
 PKG             := libgcrypt
+$(PKG)_WEBSITE  := https://directory.fsf.org/wiki/Libgcrypt
 $(PKG)_IGNORE   :=
-$(PKG)_VERSION  := 1.7.3
-$(PKG)_CHECKSUM := ddac6111077d0a1612247587be238c5294dd0ee4d76dc7ba783cc55fb0337071
+$(PKG)_VERSION  := 1.8.1
+$(PKG)_CHECKSUM := 7a2875f8b1ae0301732e878c0cca2c9664ff09ef71408f085c50e332656a78b3
 $(PKG)_SUBDIR   := libgcrypt-$($(PKG)_VERSION)
 $(PKG)_FILE     := libgcrypt-$($(PKG)_VERSION).tar.bz2
-$(PKG)_URL      := http://mirrors.dotsrc.org/gcrypt/libgcrypt/$($(PKG)_FILE)
-$(PKG)_URL_2    := ftp://ftp.gnupg.org/gcrypt/libgcrypt/$($(PKG)_FILE)
+$(PKG)_URL      := https://gnupg.org/ftp/gcrypt/libgcrypt/$($(PKG)_FILE)
+$(PKG)_URL_2    := https://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/libgcrypt/$($(PKG)_FILE)
 $(PKG)_DEPS     := gcc libgpg_error
 
 define $(PKG)_UPDATE
-    $(WGET) -q -O- 'ftp://ftp.gnupg.org/gcrypt/libgcrypt/' | \
+    $(WGET) -q -O- 'https://gnupg.org/ftp/gcrypt/libgcrypt/' | \
     $(SED) -n 's,.*libgcrypt-\([0-9][^>]*\)\.tar.*,\1,p' | \
     $(SORT) -V | \
     tail -1

@@ -35,7 +35,7 @@ The following error:
 > This may be due to a lack of SYSV IPC support.
 > fakeroot: error while starting the `faked' daemon.
 can be caused by leaked ipc resources originating in fakeroot.
-How to remove them: http://stackoverflow.com/a/4262545
+How to remove them: https://stackoverflow.com/a/4262545
 ]]
 
 local max_items = tonumber(os.getenv('MXE_BUILD_PKG_MAX_ITEMS'))
@@ -58,6 +58,7 @@ local BLACKLIST = {
     '^usr/share/info/',
     '^usr/share/man/',
     '^usr/share/gcc',
+    '^usr/share/gtk-doc',
     '^usr/lib/nonetwork.so',
     '^usr/[^/]+/share/doc/',
     '^usr/[^/]+/share/info/',
@@ -735,9 +736,15 @@ Description: %s
 
 local function debianControl(options)
     local deb_deps_str = ''
-    if #options.deps >= 1 then
-        deb_deps_str = '\n' .. 'Depends: ' ..
+    if options.deps and #options.deps >= 1 then
+        deb_deps_str = deb_deps_str ..
+            '\n' .. 'Depends: ' ..
             table.concat(options.deps, ', ')
+    end
+    if options.recommends and #options.recommends >= 1 then
+        deb_deps_str = deb_deps_str ..
+            '\n' .. 'Recommends: ' ..
+            table.concat(options.recommends, ', ')
     end
     local version = options.version .. '-' .. TODAY
     return CONTROL:format(
@@ -750,7 +757,7 @@ local function debianControl(options)
     )
 end
 
-local function makePackage(name, files, deps, ver, d1, d2, dst)
+local function makePackage(name, files, deps, ver, d1, d2, dst, recommends)
     dst = dst or '.'
     local dirname = ('%s/%s_%s'):format(dst, name,
         protectVersion(ver))
@@ -774,6 +781,7 @@ local function makePackage(name, files, deps, ver, d1, d2, dst)
         version = protectVersion(ver),
         arch = ARCH,
         deps = deps,
+        recommends = recommends,
         description1 = d1,
         description2 = d2,
     }
@@ -989,8 +997,10 @@ local function makeMxeRequirementsPackage(release)
     os.execute(('mkdir -p %s'):format(release))
     local name = 'mxe-requirements'
     local ver = getMxeVersion() .. release
-    -- dependencies
-    local deps = {
+    -- MXE build requirements should not be strict dependencies here
+    -- See https://github.com/mxe/mxe/issues/1537
+    local deps = {}
+    local recommends = {
         'autoconf', 'automake', 'autopoint', 'bash', 'bison',
         'bzip2', 'cmake', 'flex', 'gettext', 'git', 'g++',
         'gperf', 'intltool', 'libffi-dev', 'libtool',
@@ -1002,7 +1012,7 @@ local function makeMxeRequirementsPackage(release)
     }
     if release ~= 'wheezy' then
         -- Jessie+
-        table.insert(deps, 'libtool-bin')
+        table.insert(recommends, 'libtool-bin')
     end
     local dummy_name = 'mxe-requirements.dummy.' .. release
     local dummy = io.open(dummy_name, 'w')
@@ -1011,7 +1021,7 @@ local function makeMxeRequirementsPackage(release)
     local d1 = "MXE requirements package"
     local d2 = MXE_REQUIREMENTS_DESCRIPTION2
     local dst = release
-    makePackage(name, files, deps, ver, d1, d2, dst)
+    makePackage(name, files, deps, ver, d1, d2, dst, recommends)
     os.remove(dummy_name)
 end
 
