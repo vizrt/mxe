@@ -1,0 +1,23 @@
+import os
+
+def flags( env, prefix ):
+	env.Append( CPPPATH = [ os.path.join( prefix, 'include', 'SDL' ) ] )
+	env.Append( LIBPATH = [ os.path.join( prefix, 'lib') ] )
+	env.Append( LIBS = [ 'SDL.lib' ] )
+
+def install( env, prefix ):
+	if env.debug : folder_name = 'debug'
+	else : folder_name = 'release'
+
+	if os.path.isdir( os.path.join( prefix, 'bin', folder_name ) ) :
+		bin_dir = os.path.join( prefix, 'bin', folder_name )
+	else :
+		bin_dir =  os.path.join( prefix, 'bin' )
+	
+	binaries = [ "SDL.dll" ]
+	for binary in binaries :
+		env.copy_files( env[ 'stage_bin' ],  os.path.join( bin_dir, binary ) )
+
+	if env.full_install : env.copy_files( env[ 'stage_include' ],  os.path.join( prefix, 'include' ) )
+
+
