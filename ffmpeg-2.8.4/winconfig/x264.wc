@@ -4,7 +4,7 @@
 import os
 
 def flags( env, prefix ):
-	env.Append( CPPPATH = [ os.path.join( prefix, 'include', "SDL" ) ] )
+	env.Append( CPPPATH = [ os.path.join( prefix, 'include' ) ] )
 	env.Append( LIBPATH = [ os.path.join( prefix, 'lib') ] )
 	env.Append( LIBS = [ 'x264.lib' ] )
 
