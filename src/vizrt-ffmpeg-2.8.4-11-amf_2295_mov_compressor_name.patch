@@ -1,0 +1,43 @@
+diff -r b15bc1736f67 -r b244b3c23743 libavformat/movenc.c
+--- a/libavformat/movenc.c	Tue Jul 18 16:08:07 2017 +0200
++++ b/libavformat/movenc.c	Tue Jul 18 16:08:07 2017 +0200
+@@ -125,6 +125,21 @@
+     return 0;
+ }
+ 
++/* Returns the value for the "compressor name" field in the video
++ * sample description if one is known for the codec, otherwise NULL.
++ */
++static const char *mov_compressor_name_for_codec(int codec_fourcc)
++{
++    switch (codec_fourcc) {
++    case MKTAG('a', 'p', 'c', 'n'): return "Apple ProRes 422";
++    case MKTAG('a', 'p', 'c', 'o'): return "Apple ProRes 422 (Proxy)";
++    case MKTAG('a', 'p', 'c', 's'): return "Apple ProRes 422 (LT)";
++    case MKTAG('a', 'p', 'c', 'h'): return "Apple ProRes 422 (HQ)";
++    case MKTAG('a', 'p', '4', 'h'): return "Apple ProRes 4444";
++    }
++    return NULL;
++}
++
+ /* Chunk offset atom */
+ static int mov_write_stco_tag(AVIOContext *pb, MOVTrack *track)
+ {
+@@ -1631,9 +1646,14 @@
+                   || (track->enc->width == 1440 && track->enc->height == 1080)
+                   || (track->enc->width == 1920 && track->enc->height == 1080);
+ 
+-    if (track->mode == MODE_MOV &&
+-        (encoder = av_dict_get(track->st->metadata, "encoder", NULL, 0))) {
+-        av_strlcpy(compressor_name, encoder->value, 32);
++    if (track->mode == MODE_MOV) {
++        const char *name = mov_compressor_name_for_codec(track->tag);
++        if (name == NULL && track->enc->codec) {
++            name = track->enc->codec->name;
++        }
++        if (name != NULL) {
++            av_strlcpy(compressor_name, name, 32);
++        }
+     } else if (track->enc->codec_id == AV_CODEC_ID_MPEG2VIDEO && xdcam_res) {
+         int interlaced = track->enc->field_order > AV_FIELD_PROGRESSIVE;
+         AVStream *st = track->st;

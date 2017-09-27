@@ -1,0 +1,37 @@
+diff -r d95382256d6e -r dd9dbc351e08 libavformat/img2enc.c
+--- a/libavformat/img2enc.c	Tue Jul 18 16:05:08 2017 +0200
++++ b/libavformat/img2enc.c	Tue Jul 18 16:07:40 2017 +0200
+@@ -34,6 +34,7 @@
+ typedef struct VideoMuxData {
+     const AVClass *class;  /**< Class for private options. */
+     int img_number;
++    int num_pkt_writes;
+     int is_pipe;
+     int split_planes;       /**< use independent file for each Y, U, V plane */
+     char path[1024];
+@@ -50,6 +51,8 @@
+ 
+     av_strlcpy(img->path, s->filename, sizeof(img->path));
+ 
++    img->num_pkt_writes = 0;
++
+     /* find format */
+     if (s->oformat->flags & AVFMT_NOFILE)
+         img->is_pipe = 0;
+@@ -92,7 +95,7 @@
+                 return AVERROR(EINVAL);
+             }
+         } else if (av_get_frame_filename(filename, sizeof(filename), img->path, img->img_number) < 0 &&
+-                   img->img_number > 1) {
++                   img->num_pkt_writes > 0) {
+             av_log(s, AV_LOG_ERROR,
+                    "Could not get frame filename number %d from pattern '%s' (either set updatefirst or use a pattern like %%03d within the filename pattern)\n",
+                    img->img_number, img->path);
+@@ -169,6 +172,7 @@
+     }
+ 
+     img->img_number++;
++    img->num_pkt_writes++;
+     return 0;
+ }
+ 

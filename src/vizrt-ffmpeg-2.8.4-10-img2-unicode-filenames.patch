@@ -1,0 +1,42 @@
+diff -r dd9dbc351e08 -r b15bc1736f67 libavformat/file.c
+--- a/libavformat/file.c	Tue Jul 18 16:07:40 2017 +0200
++++ b/libavformat/file.c	Tue Jul 18 16:08:07 2017 +0200
+@@ -126,6 +126,38 @@
+     return c->fd;
+ }
+ 
++#if HAVE_ACCESS && defined(R_OK)
++#if defined(_WIN32) && !defined(__MINGW32CE__)
++#undef access
++static int win32_access(const char *path_utf8, int amode)
++{
++    int result;
++    int num_utf16_chars;
++    wchar_t *path_utf16;
++
++    num_utf16_chars = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
++                                          path_utf8, -1, NULL, 0);
++    if (num_utf16_chars <= 0)
++        goto fallback;
++    path_utf16 = av_mallocz(sizeof(wchar_t) * num_utf16_chars);
++    if (!path_utf16) {
++        errno = ENOMEM;
++        return -1;
++    }
++    MultiByteToWideChar(CP_UTF8, 0, path_utf8, -1,
++                        path_utf16, num_utf16_chars);
++    result = _waccess(path_utf16, amode);
++    av_freep(&path_utf16);
++    return result;
++
++fallback:
++    /* path may be in CP_ACP */
++    return _access(path_utf8, amode);
++}
++#define access win32_access
++#endif
++#endif
++
+ static int file_check(URLContext *h, int mask)
+ {
+     int ret = 0;

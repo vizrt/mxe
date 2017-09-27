@@ -1,6 +1,6 @@
-=== modified file 'configure'
---- a/configure	revid:are@vizrt.com-20160524123118-wt8ahnanaxp1y4z7
-+++ b/configure	2016-05-25 12:13:09 +0000
+diff -r f1a0cb0f94cc -r fccd40179ae9 configure
+--- a/configure	Tue Jul 18 16:03:48 2017 +0200
++++ b/configure	Tue Jul 18 16:04:32 2017 +0200
 @@ -259,6 +259,7 @@
    --enable-libwavpack      enable wavpack encoding via libwavpack [no]
    --enable-libwebp         enable WebP encoding via libwebp [no]
@@ -25,7 +25,7 @@
  enable safe_bitstream_reader
  enable static
  enable swscale_alpha
-@@ -5316,6 +5319,7 @@
+@@ -5315,6 +5318,7 @@
                                 die "ERROR: libx264 must be installed and version must be >= 0.118."; } &&
                               { check_cpp_condition x264.h "X264_MPEG2" &&
                                 enable libx262; }
@@ -33,7 +33,7 @@
  enabled libx265           && require_pkg_config x265 x265.h x265_api_get &&
                               { check_cpp_condition x265.h "X265_BUILD >= 57" ||
                                 die "ERROR: libx265 version must be >= 57."; }
-@@ -5891,6 +5895,10 @@
+@@ -5890,6 +5894,10 @@
  fi
  echo "big-endian                ${bigendian-no}"
  echo "runtime cpu detection     ${runtime_cpudetect-no}"
@@ -44,10 +44,9 @@
  if enabled x86; then
      echo "${yasmexe}                      ${yasm-no}"
      echo "MMX enabled               ${mmx-no}"
-
-=== modified file 'libavcodec/libx264.c'
---- a/libavcodec/libx264.c	revid:are@vizrt.com-20160524123118-wt8ahnanaxp1y4z7
-+++ b/libavcodec/libx264.c	2016-05-25 15:02:04 +0000
+diff -r f1a0cb0f94cc -r fccd40179ae9 libavcodec/libx264.c
+--- a/libavcodec/libx264.c	Tue Jul 18 16:03:48 2017 +0200
++++ b/libavcodec/libx264.c	Tue Jul 18 16:04:32 2017 +0200
 @@ -33,6 +33,222 @@
  #endif
  
@@ -306,4 +305,3 @@
  }
  
  #define OFFSET(x) offsetof(X264Context, x)
-

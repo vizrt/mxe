@@ -1,6 +1,6 @@
-diff -r a20721214065 libavformat/ftp.c
---- a/libavformat/ftp.c	Thu Mar 31 13:49:38 2016 +0200
-+++ b/libavformat/ftp.c	Thu Mar 31 15:52:23 2016 +0200
+diff -r a5875c95b975 -r f1a0cb0f94cc libavformat/ftp.c
+--- a/libavformat/ftp.c	Tue Jul 18 16:03:48 2017 +0200
++++ b/libavformat/ftp.c	Tue Jul 18 16:03:48 2017 +0200
 @@ -227,8 +227,15 @@
  
  static void ftp_close_both_connections(FTPContext *s)

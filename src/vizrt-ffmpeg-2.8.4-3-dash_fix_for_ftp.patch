@@ -1,0 +1,42 @@
+diff -r f86f04198fcd -r a5875c95b975 libavformat/dashenc.c
+--- a/libavformat/dashenc.c	Tue Jul 18 16:03:47 2017 +0200
++++ b/libavformat/dashenc.c	Tue Jul 18 16:03:48 2017 +0200
+@@ -537,7 +537,7 @@
+     avio_printf(out, "</MPD>\n");
+     avio_flush(out);
+     avio_close(out);
+-    return ff_rename(temp_filename, s->filename, s);
++    return avpriv_io_move(temp_filename, s->filename);
+ }
+ 
+ static int dash_write_header(AVFormatContext *s)
+@@ -833,7 +833,7 @@
+         } else {
+             ffurl_close(os->out);
+             os->out = NULL;
+-            ret = ff_rename(temp_path, full_path, s);
++            ret = avpriv_io_move(temp_path, full_path);
+             if (ret < 0)
+                 break;
+         }
+diff -r f86f04198fcd -r a5875c95b975 libavformat/file.c
+--- a/libavformat/file.c	Tue Jul 18 16:03:47 2017 +0200
++++ b/libavformat/file.c	Tue Jul 18 16:03:48 2017 +0200
+@@ -176,7 +176,6 @@
+ 
+ static int file_move(URLContext *h_src, URLContext *h_dst)
+ {
+-#if HAVE_UNISTD_H
+     const char *filename_src = h_src->filename;
+     const char *filename_dst = h_dst->filename;
+     av_strstart(filename_src, "file:", &filename_src);
+@@ -186,9 +185,6 @@
+         return AVERROR(errno);
+ 
+     return 0;
+-#else
+-    return AVERROR(ENOSYS);
+-#endif /* HAVE_UNISTD_H */
+ }
+ 
+ #if CONFIG_FILE_PROTOCOL

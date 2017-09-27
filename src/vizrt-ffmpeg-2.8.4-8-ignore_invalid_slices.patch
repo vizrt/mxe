@@ -1,0 +1,12 @@
+diff -r b9ce48189089 -r d95382256d6e libavcodec/mpeg12dec.c
+--- a/libavcodec/mpeg12dec.c	Tue Jul 18 16:05:08 2017 +0200
++++ b/libavcodec/mpeg12dec.c	Tue Jul 18 16:05:08 2017 +0200
+@@ -2666,7 +2666,7 @@
+                 if (mb_y >= s2->mb_height) {
+                     av_log(s2->avctx, AV_LOG_ERROR,
+                            "slice below image (%d >= %d)\n", mb_y, s2->mb_height);
+-                    return AVERROR_INVALIDDATA;
++                    break;
+                 }
+ 
+                 if (!s2->last_picture_ptr) {

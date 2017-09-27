@@ -1,7 +1,7 @@
-=== modified file 'libavformat/movenc.c'
---- a/libavformat/movenc.c	revid:mjo@vizrt.com-20151217072514-5rdfc3x9h1qamw22
-+++ b/libavformat/movenc.c	2016-01-20 04:56:52 +0000
-@@ -1824,7 +1824,7 @@
+diff -r b244b3c23743 -r 50cd330f1558 libavformat/movenc.c
+--- a/libavformat/movenc.c	Tue Jul 18 16:08:07 2017 +0200
++++ b/libavformat/movenc.c	Tue Jul 18 16:08:07 2017 +0200
+@@ -1844,7 +1844,7 @@
      if (track->st)
          t = av_dict_get(track->st->metadata, "reel_name", NULL, 0);
  
@@ -10,7 +10,7 @@
          mov_write_source_reference_tag(pb, track, t->value);
      else
          avio_wb16(pb, 0); /* zero size */
-@@ -2201,7 +2201,10 @@
+@@ -2221,7 +2221,10 @@
      } else if (track->tag == MKTAG('r','t','p',' ')) {
          mov_write_hmhd_tag(pb);
      } else if (track->tag == MKTAG('t','m','c','d')) {
@@ -22,7 +22,7 @@
      }
      if (track->mode == MODE_MOV) /* FIXME: Why do it for MODE_MOV only ? */
          mov_write_hdlr_tag(pb, NULL);
-@@ -5052,7 +5055,7 @@
+@@ -5072,7 +5075,7 @@
          }
      }
  
@@ -31,4 +31,3 @@
          tmcd_track = mov->nb_streams;
  
          /* +1 tmcd track for each video stream with a timecode */
-

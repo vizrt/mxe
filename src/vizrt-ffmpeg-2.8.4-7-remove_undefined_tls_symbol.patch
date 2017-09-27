@@ -1,0 +1,11 @@
+diff -r 88ef05fd1218 -r b9ce48189089 libavformat/tls_gnutls.c
+--- a/libavformat/tls_gnutls.c	Tue Jul 18 16:05:08 2017 +0200
++++ b/libavformat/tls_gnutls.c	Tue Jul 18 16:05:08 2017 +0200
+@@ -167,7 +167,6 @@
+     gnutls_transport_set_pull_function(p->session, gnutls_url_pull);
+     gnutls_transport_set_push_function(p->session, gnutls_url_push);
+     gnutls_transport_set_ptr(p->session, c->tcp);
+-    gnutls_priority_set_direct(p->session, "NORMAL", NULL);
+     ret = gnutls_handshake(p->session);
+     if (ret) {
+         ret = print_tls_error(h, ret);

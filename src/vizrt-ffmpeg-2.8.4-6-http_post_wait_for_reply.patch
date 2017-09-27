@@ -1,0 +1,24 @@
+diff -r fccd40179ae9 -r 88ef05fd1218 libavformat/http.c
+--- a/libavformat/http.c	Tue Jul 18 16:04:32 2017 +0200
++++ b/libavformat/http.c	Tue Jul 18 16:05:08 2017 +0200
+@@ -1395,6 +1395,7 @@
+ static int http_close(URLContext *h)
+ {
+     int ret = 0;
++    int new_loc = 0;
+     HTTPContext *s = h->priv_data;
+ 
+ #if CONFIG_ZLIB
+@@ -1402,9 +1403,11 @@
+     av_freep(&s->inflate_buffer);
+ #endif /* CONFIG_ZLIB */
+ 
+-    if (!s->end_chunked_post)
++    if (!s->end_chunked_post) {
+         /* Close the write direction by sending the end of chunked encoding. */
+         ret = http_shutdown(h, h->flags);
++        http_read_header(h, &new_loc);
++    }
+ 
+     if (s->hd)
+         ffurl_closep(&s->hd);

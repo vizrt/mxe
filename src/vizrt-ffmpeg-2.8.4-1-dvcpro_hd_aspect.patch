@@ -1,6 +1,6 @@
-diff -r b4b522e0ee8e -r 915b2a9cd732 libavcodec/dv_profile.c
---- a/libavcodec/dv_profile.c	Tue Sep 08 10:56:42 2015 +0200
-+++ b/libavcodec/dv_profile.c	Tue Sep 08 11:07:08 2015 +0200
+diff -r 1099346a20d5 -r be390a9828b7 libavcodec/dv_profile.c
+--- a/libavcodec/dv_profile.c	Tue Jul 18 16:03:47 2017 +0200
++++ b/libavcodec/dv_profile.c	Tue Jul 18 16:03:47 2017 +0200
 @@ -165,7 +165,7 @@
        .ltc_divisor        = 30,
        .height             = 1080,
