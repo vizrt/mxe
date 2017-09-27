@@ -1,6 +1,6 @@
 === modified file 'libavcodec/ituh263enc.c'
---- libavcodec/ituh263enc.c	revid:martin.almloef@vizrt.com-20140219192547-p2f0y0oqjzjufeb8
-+++ libavcodec/ituh263enc.c	2014-03-03 09:22:02 +0000
+--- a/libavcodec/ituh263enc.c	revid:martin.almloef@vizrt.com-20140219192547-p2f0y0oqjzjufeb8
++++ b/libavcodec/ituh263enc.c	2014-03-03 09:22:02 +0000
 @@ -158,10 +158,7 @@
  
          put_bits(&s->pb, 3, 7);

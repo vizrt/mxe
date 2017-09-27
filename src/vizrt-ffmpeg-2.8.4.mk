@@ -53,7 +53,7 @@ define $(PKG)_BUILD
         --enable-libvo-amrwbenc \
         --enable-libvorbis \
         --enable-libvpx \
-        --enable-libx264 \
+        --enable-runtime-libx264 \
         --enable-libfdk-aac
     $(MAKE) -C '$(1)' -j '$(JOBS)'
     $(MAKE) -C '$(1)' -j 1 install
