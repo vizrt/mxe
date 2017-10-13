@@ -24,7 +24,7 @@ define $(PKG)_BUILD
         --extra-ldflags="-Wl,--output-def,x264.def" \
         $(MXE_CONFIGURE_OPTS) \
         --cross-prefix='$(TARGET)'- \
-        --enable-win32thread \
+        --disable-avs \
         --disable-lavf \
         --disable-cli \
         --disable-swscale   # Avoid circular dependency with ffmpeg. Remove if undesired.

@@ -32,8 +32,7 @@ define $(PKG)_BUILD
         --yasmexe='$(TARGET)-yasm' \
         --disable-debug \
         --enable-memalign-hack \
-        --disable-pthreads \
-        --enable-w32threads \
+        --enable-pthreads \
         --disable-doc \
         --enable-avresample \
         --enable-version3 \

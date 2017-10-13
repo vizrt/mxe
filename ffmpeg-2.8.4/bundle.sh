@@ -22,6 +22,7 @@ cp usr/${TARGET}/bin/ffmpeg.exe ${DST}/bin/
 cp usr/${TARGET}/bin/ffprobe.exe ${DST}/bin/
 cp usr/${TARGET}/bin/ffplay.exe ${DST}/bin/
 cp usr/${TARGET}/bin/*.lib ${DST}/lib/
+cp ffmpeg-2.8.4/winconfig ${DST}/lib/. -r
 cp usr/${TARGET}/bin/*.dll ${DST}/bin/
 cp -r usr/${TARGET}/include/libavformat ${DST}/include/
 cp -r usr/${TARGET}/include/libavcodec ${DST}/include/

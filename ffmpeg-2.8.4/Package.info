@@ -1,4 +1,4 @@
-Package: ffmpeg
+Package: ffmpeg.windows.x64
 Summary:: FFMpeg for Windows
 Version: 2.8.4
 ConformanceLevel: 3
