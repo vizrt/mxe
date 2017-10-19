@@ -46,4 +46,6 @@ define $(PKG)_BUILD
         CFLAGS="$(CFLAGS) $(if $(BUILD_STATIC),-DCAIRO_WIN32_STATIC_BUILD)" \
         LIBS="-lmsimg32 -lgdi32 `$(TARGET)-pkg-config pixman-1 --libs`"
     $(MAKE) -C '$(1)' -j '$(JOBS)' install bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=
+
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/cairo.lib -d $(1)/src/cairo.def -D libcairo-2.dll
 endef

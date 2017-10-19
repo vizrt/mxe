@@ -1,0 +1,2 @@
+Visual Studio does not support C99. These headers allows you to include among
+other things ffmpeg.

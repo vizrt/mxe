@@ -1,0 +1,7 @@
+# This is just a file to give the {NAME} package the alias {ALIAS}
+
+def flags(env, prefix):
+    env.requires('{NAME}')
+
+def install(env, prefix):
+    pass

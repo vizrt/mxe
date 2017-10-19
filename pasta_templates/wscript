@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+def configure(ctx):
+    ctx.check(
+        lib=[ l.splitext()[0] for l in {LIBS} ],
+        libpath=[ ctx.path.find_node('lib').abspath() ],
+        includes=[ ctx.path.find_node('include').abspath() ],
+        uselib_store='{NAME}'
+    )
+
+    ctx.env['BINDIR_{NAME}'] = ctx.path.find_node('bin').abspath()
+
+def build(ctx):
+    src_node = ctx.root.find_node(ctx.env['BINDIR_{NAME}'])
+    dst_node = ctx.root.make_node(ctx.out_dir).make_node('bin')
+
+    ctx.bundle(src_node, dst_node, '${{BINDIR}}')

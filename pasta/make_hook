@@ -3,7 +3,8 @@
 export TARGET='x86_64-w64-mingw32.shared'
 
 make MXE_TARGETS=${TARGET} vizrt-ffmpeg-2.8.4
+make MXE_TARGETS=${TARGET} sdl
 make MXE_TARGETS=${TARGET} sdl2
+make MXE_TARGETS=${TARGET} cairo
 
-./ffmpeg-2.8.4/bundle.sh
-./sdl2-2.0.4/bundle.sh
+./pasta_builder.py

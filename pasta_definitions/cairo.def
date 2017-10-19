@@ -1,0 +1,14 @@
+{
+    "package_name" : "Cairo",
+    "name" : "cairo",
+    "version" : "1.15.4",
+    "lib" : [
+        "cairo.lib"
+    ],
+    "include" : [
+        "cairo"
+    ],
+    "include_paths" : [
+        "include/cairo"
+    ]
+}

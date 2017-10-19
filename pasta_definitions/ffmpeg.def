@@ -1,0 +1,33 @@
+{
+    "package_name" : "FFMpeg",
+    "name" : "ffmpeg",
+    "version" : "2.8.4",
+    "lib" : [
+        "avcodec.lib",
+        "avdevice.lib",
+        "avfilter.lib",
+        "avformat.lib",
+        "avresample.lib",
+        "avutil.lib",
+        "swresample.lib",
+        "swscale.lib"
+    ],
+    "include" : [
+        "libavformat",
+        "libavcodec",
+        "libavdevice",
+        "libavfilter",
+        "libswresample",
+        "libavutil",
+        "libswscale"
+    ],
+    "exe" : [
+        "ffmpeg.exe",
+        "ffprobe.exe",
+        "ffplay.exe"
+    ],
+    "openbuild_aliases" : [ "libavformat", "libswscale" ],
+    "extra" : {
+        "extra/msvc_c99/inttypes.h" : "include/inttypes.h"
+    }
+}

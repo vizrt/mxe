@@ -1,0 +1,11 @@
+Package: {PACKAGE_NAME}
+Summary: {PACKAGE_NAME} cross-compiled for Windows
+Version: {VERSION}
+ConformanceLevel: 3
+{DEPENDS}IncludeFiles: bin
+IncludeFiles: lib
+IncludeFiles: include
+Keywords: {PACKAGE_NAME} windows mingw coderbuild
+Publishable: yes
+
+Generated {PACKAGE_NAME} PaSta package from the Vizrt MXE repository

@@ -1,0 +1,11 @@
+{
+    "package_name" : "SDL2",
+    "name" : "sdl2",
+    "version" : "2.0.5",
+    "lib" : [
+        "SDL2.lib"
+    ],
+    "include" : [
+        "SDL2"
+    ]
+}

@@ -1,0 +1,21 @@
+# Name: {NAME}
+# Description: {PACKAGE_NAME}
+# Version: {VERSION}
+
+import os
+
+def flags(env, prefix):
+    env.requires(*{DEPS})
+
+    env.Append(CPPPATH=[os.path.join(prefix, 'include')])
+    env.Append(LIBPATH=[os.path.join(prefix, 'lib')])
+    env.Append(LIBS={LIBS})
+
+def install(env, prefix):
+    folder_name = 'debug' if env.debug else 'release'
+    bin_dir = os.path.join(prefix, 'bin')
+
+    binaries = {DLLS}
+
+    for binary in binaries:
+        env.copy_files(env['stage_bin'], os.path.join(bin_dir, binary))

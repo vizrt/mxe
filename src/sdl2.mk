@@ -39,5 +39,5 @@ define $(PKG)_BUILD
         '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-sdl2.exe' \
         `'$(TARGET)-pkg-config' sdl2 --cflags --libs`
 
-    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/lib/SDL2.lib -d $(1)/SDL2.def -D SDL2.dll
+    $(TARGET)-dlltool -l $(PREFIX)/$(TARGET)/bin/SDL2.lib -d $(1)/SDL2.def -D SDL2.dll
 endef
