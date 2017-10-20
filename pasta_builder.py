@@ -85,7 +85,7 @@ if __name__ == "__main__":
         print("Parsing package definition: {}".format(package_definition))
 
         with open(package_definition, "rb") as f:
-            definition = json.loads(f.read())
+            definition = json.loads(f.read().decode("utf-8"))
 
         name = definition["name"]
 
