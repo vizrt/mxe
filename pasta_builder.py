@@ -204,9 +204,15 @@ if __name__ == "__main__":
         with open(package_info_filename, "wb") as f:
             f.write(package_info_template.format(**subst_values).encode("utf-8"))
 
-        include_paths = package.get("include_paths", ["include"])
+        if len(package.get("include", [])) > 0:
+            default_include_paths = ["include"]
+        else:
+            default_include_paths = []
 
-        create_vizwaf(name, prefix, include_paths)
+
+        include_paths = package.get("include_paths", default_include_paths)
+
+        create_vizwaf(name, prefix, include_paths, deps=package["deps"])
 
         create_winconfig(name, prefix, include_paths, deps=package["deps"])
 
