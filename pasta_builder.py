@@ -20,8 +20,9 @@ import glob
 from subprocess import Popen, PIPE
 
 sys.path.append("CPP.Package.Utilities")
-from cpp_package.winconfig import create_winconfig, create_winconfig_alias
+from cpp_package.winconfig import create_winconfig
 from cpp_package.vizwaf import create_vizwaf
+from cpp_package.package_descriptor import PackageDescriptor
 
 OBJDUMP="usr/bin/x86_64-w64-mingw32.shared-objdump"
 ROOT="usr/x86_64-w64-mingw32.shared"
@@ -209,13 +210,12 @@ if __name__ == "__main__":
         else:
             default_include_paths = []
 
+        desc = PackageDescriptor(prefix)
+        desc.name = name
+        desc.includes = package.get("include_paths", default_include_paths)
+        desc.dependencies = package["deps"]
+        desc.aliases = package.get("openbuild_aliases", [])
 
-        include_paths = package.get("include_paths", default_include_paths)
-
-        create_vizwaf(name, prefix, include_paths, deps=package["deps"])
-
-        create_winconfig(name, prefix, include_paths, deps=package["deps"])
-
-        for alias in package.get("openbuild_aliases", []):
-            create_winconfig_alias(alias, prefix, name)
+        create_vizwaf(desc)
+        create_winconfig(desc)
 
