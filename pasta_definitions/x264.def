@@ -1,7 +1,7 @@
 {
     "package_name" : "X264",
     "name" : "x264",
-    "version" : "20141218",
+    "version" : "0.20141218",
     "lib" : [
         "x264.lib"
     ],
