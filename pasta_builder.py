@@ -22,6 +22,7 @@ from subprocess import Popen, PIPE
 sys.path.append("CPP.Package.Utilities")
 from cpp_package.winconfig import create_winconfig
 from cpp_package.vizwaf import create_vizwaf
+from cpp_package.cmake import create_cmake
 from cpp_package.package_descriptor import PackageDescriptor
 
 OBJDUMP="usr/bin/x86_64-w64-mingw32.shared-objdump"
@@ -218,4 +219,5 @@ if __name__ == "__main__":
 
         create_vizwaf(desc)
         create_winconfig(desc)
+        create_cmake(desc)
 
