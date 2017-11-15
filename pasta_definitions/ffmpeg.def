@@ -26,7 +26,7 @@
         "ffprobe.exe",
         "ffplay.exe"
     ],
-    "openbuild_aliases" : [ "libavformat", "libswscale" ],
+    "openbuild_aliases" : [ "libavformat", "libswscale", "libavfilter" ],
     "extra" : {
         "extra/msvc_c99/inttypes.h" : "include/inttypes.h"
     }
